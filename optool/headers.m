@@ -34,7 +34,7 @@ struct thin_header headerAtOffset(NSData *binary, uint32_t offset) {
     struct thin_header macho;
     macho.offset = offset;
     macho.header = *(struct mach_header *)(binary.bytes + offset);
-    if (macho.header.cputype == CPU_TYPE_I386) {
+    if (macho.header.magic == MH_MAGIC || macho.header.magic == MH_CIGAM) {
         macho.size = sizeof(struct mach_header);
     } else {
         macho.size = sizeof(struct mach_header_64);
