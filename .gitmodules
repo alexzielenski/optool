@@ -1,0 +1,3 @@
+[submodule "optool/FSArgumentParser"]
+	path = optool/FSArgumentParser
+	url = git@github.com:NSError/ArgumentParser.git

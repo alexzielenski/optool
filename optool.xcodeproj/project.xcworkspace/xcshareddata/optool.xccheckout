@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>IDESourceControlProjectFavoriteDictionaryKey</key>
+	<false/>
+	<key>IDESourceControlProjectIdentifier</key>
+	<string>B38E7E3E-A9F1-4387-849F-632893CBBA39</string>
+	<key>IDESourceControlProjectName</key>
+	<string>optool</string>
+	<key>IDESourceControlProjectOriginsDictionary</key>
+	<dict>
+		<key>CC1B62D0E1374D1BA1891836B9AA024AA3EC92EE</key>
+		<string>github.com:alexzielenski/optool.git</string>
+		<key>D1B6B9FA9FE2EC412736C36DCF6D3BF9E34BCB5C</key>
+		<string>github.com:NSError/ArgumentParser.git</string>
+	</dict>
+	<key>IDESourceControlProjectPath</key>
+	<string>optool.xcodeproj</string>
+	<key>IDESourceControlProjectRelativeInstallPathDictionary</key>
+	<dict>
+		<key>CC1B62D0E1374D1BA1891836B9AA024AA3EC92EE</key>
+		<string>../..</string>
+		<key>D1B6B9FA9FE2EC412736C36DCF6D3BF9E34BCB5C</key>
+		<string>../..FSArgumentParser/</string>
+	</dict>
+	<key>IDESourceControlProjectURL</key>
+	<string>github.com:alexzielenski/optool.git</string>
+	<key>IDESourceControlProjectVersion</key>
+	<integer>111</integer>
+	<key>IDESourceControlProjectWCCIdentifier</key>
+	<string>CC1B62D0E1374D1BA1891836B9AA024AA3EC92EE</string>
+	<key>IDESourceControlProjectWCConfigurations</key>
+	<array>
+		<dict>
+			<key>IDESourceControlRepositoryExtensionIdentifierKey</key>
+			<string>public.vcs.git</string>
+			<key>IDESourceControlWCCIdentifierKey</key>
+			<string>D1B6B9FA9FE2EC412736C36DCF6D3BF9E34BCB5C</string>
+			<key>IDESourceControlWCCName</key>
+			<string>FSArgumentParser</string>
+		</dict>
+		<dict>
+			<key>IDESourceControlRepositoryExtensionIdentifierKey</key>
+			<string>public.vcs.git</string>
+			<key>IDESourceControlWCCIdentifierKey</key>
+			<string>CC1B62D0E1374D1BA1891836B9AA024AA3EC92EE</string>
+			<key>IDESourceControlWCCName</key>
+			<string>optool</string>
+		</dict>
+	</array>
+</dict>
+</plist>
