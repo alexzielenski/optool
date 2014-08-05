@@ -86,14 +86,14 @@ struct thin_header *headersFromBinary(struct thin_header *headers, NSData *binar
         }
     // The binary is thin, meaning it contains only one architecture
     } else if (magic == MH_MAGIC || magic == MH_MAGIC_64) {
-        LOG("Found thin header...");
-        
         struct thin_header macho = headerAtOffset(binary, 0);
         if (macho.size > 0) {
+            LOG("Found thin header...");
+
             numArchs++;
+            headers[0] = macho;
         }
         
-        headers[0] = macho;
     } else {
         LOG("No headers found.");
     }
