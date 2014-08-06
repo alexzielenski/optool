@@ -30,10 +30,6 @@
 #import <mach-o/fat.h>
 #import "NSData+Reading.h"
 
-#ifndef CPU_TYPE_ARM64
-    #define CPU_TYPE_ARM64 (CPU_TYPE_ARM | CPU_ARCH_ABI64)
-#endif
-
 struct thin_header headerAtOffset(NSData *binary, uint32_t offset) {
     struct thin_header macho;
     macho.offset = offset;

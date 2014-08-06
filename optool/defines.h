@@ -28,6 +28,10 @@
 
 #import <mach-o/loader.h>
 
+#ifndef CPU_TYPE_ARM64
+    #define CPU_TYPE_ARM64 (CPU_TYPE_ARM | CPU_ARCH_ABI64)
+#endif
+
 #define LOG(fmt, args...) printf(fmt "\n", ##args)
 #define CPU(CPUTYPE) CPUTYPE == CPU_TYPE_I386 ? "x86" : "x86_64"
 #define LC(LOADCOMMAND) ({ \
