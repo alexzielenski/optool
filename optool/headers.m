@@ -30,6 +30,10 @@
 #import <mach-o/fat.h>
 #import "NSData+Reading.h"
 
+#ifndef CPU_TYPE_ARM64
+    #define CPU_TYPE_ARM64 (CPU_TYPE_ARM | CPU_ARCH_ABI64)
+#endif
+
 struct thin_header headerAtOffset(NSData *binary, uint32_t offset) {
     struct thin_header macho;
     macho.offset = offset;
@@ -39,7 +43,7 @@ struct thin_header headerAtOffset(NSData *binary, uint32_t offset) {
     } else {
         macho.size = sizeof(struct mach_header_64);
     }
-    if (macho.header.cputype != CPU_TYPE_X86_64 && macho.header.cputype != CPU_TYPE_I386 && macho.header.cputype != CPU_TYPE_ARM){
+    if (macho.header.cputype != CPU_TYPE_X86_64 && macho.header.cputype != CPU_TYPE_I386 && macho.header.cputype != CPU_TYPE_ARM && macho.header.cputype != CPU_TYPE_ARM64){
         macho.size = 0;
     }
     
