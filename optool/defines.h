@@ -28,8 +28,25 @@
 
 #import <mach-o/loader.h>
 
+#ifndef CPU_TYPE_ARM64
+    #define CPU_TYPE_ARM64 (CPU_TYPE_ARM | CPU_ARCH_ABI64)
+#endif
+
 #define LOG(fmt, args...) printf(fmt "\n", ##args)
-#define CPU(CPUTYPE) CPUTYPE == CPU_TYPE_I386 ? "x86" : "x86_64"
+
+#define CPU(CPUTYPE) ({ \
+    const char *c = ""; \
+    if (CPUTYPE == CPU_TYPE_I386) \
+        c = "x86"; \
+    if (CPUTYPE == CPU_TYPE_X86_64) \
+        c = "x86_64"; \
+    if (CPUTYPE == CPU_TYPE_ARM) \
+        c = "arm"; \
+    if (CPUTYPE == CPU_TYPE_ARM64) \
+        c = "arm64"; \
+    c; \
+})
+
 #define LC(LOADCOMMAND) ({ \
     const char *c = ""; \
     if (LOADCOMMAND == LC_REEXPORT_DYLIB) \

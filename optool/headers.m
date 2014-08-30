@@ -39,7 +39,7 @@ struct thin_header headerAtOffset(NSData *binary, uint32_t offset) {
     } else {
         macho.size = sizeof(struct mach_header_64);
     }
-    if (macho.header.cputype != CPU_TYPE_X86_64 && macho.header.cputype != CPU_TYPE_I386 && macho.header.cputype != CPU_TYPE_ARM){
+    if (macho.header.cputype != CPU_TYPE_X86_64 && macho.header.cputype != CPU_TYPE_I386 && macho.header.cputype != CPU_TYPE_ARM && macho.header.cputype != CPU_TYPE_ARM64){
         macho.size = 0;
     }
     
