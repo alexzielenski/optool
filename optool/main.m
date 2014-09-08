@@ -181,7 +181,7 @@ int main(int argc, const char * argv[]) {
         if ([package booleanValueForSignature:backup]) {
             NSError *error = nil;
             LOG("Backing up executable (%s)...", executablePath.UTF8String);
-            if (![manager copyItemAtPath:executablePath toPath:backupPath error:&error]) {
+            if (![manager fileExistsAtPath:backupPath isDirectory:NULL] && ![manager copyItemAtPath:executablePath toPath:backupPath error:&error]) {
                 LOG("Encountered error during backup: %s", error.localizedDescription.UTF8String);
                 return OPErrorBackupFailure;
             }
