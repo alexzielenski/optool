@@ -230,7 +230,7 @@ BOOL insertLoadEntryIntoBinary(NSString *dylibPath, NSMutableData *binary, struc
     dylib.timestamp = 2; // load commands I've seen use 2 for some reason
     dylib.current_version = 0;
     dylib.compatibility_version = 0;
-    command.cmd = LC_LOAD_UPWARD_DYLIB;
+    command.cmd = type;
     command.dylib = dylib;
     command.cmdsize = length + padding;
     
