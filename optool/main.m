@@ -55,18 +55,20 @@ int main(int argc, const char * argv[]) {
         FSArgumentSignature *install = [FSArgumentSignature argumentSignatureWithFormat:@"[i install]"];
         FSArgumentSignature *uninstall = [FSArgumentSignature argumentSignatureWithFormat:@"[u uninstall]"];
         FSArgumentSignature *aslr = [FSArgumentSignature argumentSignatureWithFormat:@"[a aslr]"];
-
+        FSArgumentSignature *unrestrict = [FSArgumentSignature argumentSignatureWithFormat:@"[c unrestrict]"];
+        
         [strip setInjectedSignatures:[NSSet setWithObjects:target, weak, nil]];
         [restore setInjectedSignatures:[NSSet setWithObjects:target, nil]];
         [install setInjectedSignatures:[NSSet setWithObjects:target, payload, nil]];
         [uninstall setInjectedSignatures:[NSSet setWithObjects:target, payload, nil]];
         [aslr setInjectedSignatures:[NSSet setWithObjects:target, nil]];
-
-        [weak setInjectedSignatures:[NSSet setWithObjects:strip, nil]];
+        [unrestrict setInjectedSignatures:[NSSet setWithObjects:target, weak, nil]];
+        
+        [weak setInjectedSignatures:[NSSet setWithObjects:strip, unrestrict, nil]];
         [payload setInjectedSignatures:[NSSet setWithObjects:install, uninstall, nil]];
         [command setInjectedSignatures:[NSSet setWithObjects:install, nil]];
 
-        FSArgumentPackage *package = [[NSProcessInfo processInfo] fsargs_parseArgumentsWithSignatures:@[resign, command, strip, restore, install, uninstall, output, backup, aslr, help]];
+        FSArgumentPackage *package = [[NSProcessInfo processInfo] fsargs_parseArgumentsWithSignatures:@[resign, command, strip, restore, install, uninstall, output, backup, aslr, help, unrestrict]];
 
         NSString *targetPath = [package firstObjectForSignature:target];
         if (!targetPath || [package unknownSwitches].count > 0 || [package booleanValueForSignature:help]) {
@@ -143,6 +145,14 @@ int main(int argc, const char * argv[]) {
                 } else {
                     LOG("Successfully stripped code signatures");
                 }
+            } else if ([package booleanValueForSignature:unrestrict]) {
+                if (!unrestrictBinary(binary, macho, [package booleanValueForSignature:weak])) {
+                    LOG("Found no restrict section to remove");
+                    return OPErrorStripFailure;
+                } else {
+                    LOG("Sucessfully removed restrict section");
+                }
+                
             } else if ([package booleanValueForSignature:uninstall]) {
                 if (removeLoadEntryFromBinary(binary, macho, dylibPath)) {
                     LOG("Successfully removed all entries for %s", dylibPath.UTF8String);
@@ -232,15 +242,16 @@ int main(int argc, const char * argv[]) {
 
 #define SHOW(SIG) LOG("%s", [[SIG fsargs_mutableStringByIndentingToWidth:2 lineLength:ws.ws_col] UTF8String])
 
-            LOG("optool v0.1\n");
+            LOG("optool v0.2\n");
             LOG("USAGE:");
             SHOW(@"install -c <command> -p <payload> -t <target> [-o=<output>] [-b] [--resign] Inserts an LC_LOAD command into the target binary which points to the payload. This may render some executables unusable.");
             SHOW(@"uninstall -p <payload> -t <target> [-o=<output>] [-b] [--resign] Removes any LC_LOAD commands which point to a given payload from the target binary. This may render some executables unusable.");
             SHOW(@"strip [-w] -t <target> Removes a code signature load command from the given binary.");
+            SHOW(@"unrestrict [-w] -t <target> Removes a __restrict section from the given binary. The weak flag makes this a non-destructive operation which merely renames the __restrict section to something not understandable by dyld; otherwise, this operation removes all the __restrict data from the binary.");
             SHOW(@"restore -t <target> Restores any backup made on the target by this tool.");
             SHOW(@"aslr -t <target> [-o=<output>] [-b] [--resign] Removes an ASLR flag from the macho header if it exists. This may render some executables unusable");
             LOG("\nOPTIONS:");
-            SHOW(@"[-w --weak] Used with the STRIP command to weakly remove the signature. Without this, the code signature is replaced with null bytes on the binary and its LOAD command is removed.");
+            SHOW(@"[-w --weak] Used with the STRIP or UNRESTRICT commands to weakly remove the signature. Without this, the code signature is replaced with null bytes on the binary and its LOAD command is removed.");
             SHOW(@"[--resign] Try to repair the code signature after any operations are done. This may render some executables unusable.");
             SHOW(@"-t|--target <target> Required of all commands to specify the target executable to modify");
             SHOW(@"-p|--payload <payload> Required of the INSTALL and UNINSTALL commands to specify the path to a DYLIB to point the LOAD command to");

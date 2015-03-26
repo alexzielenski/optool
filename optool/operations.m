@@ -30,6 +30,7 @@
 #import "NSData+Reading.h"
 
 unsigned int OP_SOFT_STRIP = 0x00001337;
+const char *OP_SOFT_UNRESTRICT = "\xf0\x9f\x92\xa9";
 
 BOOL stripCodeSignatureFromBinary(NSMutableData *binary, struct thin_header macho, BOOL softStrip) {
     binary.currentOffset = macho.offset + macho.size;
@@ -76,6 +77,113 @@ BOOL stripCodeSignatureFromBinary(NSMutableData *binary, struct thin_header mach
     // paste in a modified header with an updated number and size of load commands
     if (!softStrip) {
         [binary replaceBytesInRange:NSMakeRange(macho.offset, sizeof(macho.header)) withBytes:&macho.header length:sizeof(macho.header)];
+    }
+    
+    return success;
+}
+
+BOOL unrestrictBinary(NSMutableData *binary, struct thin_header macho, BOOL soft) {
+    binary.currentOffset = macho.offset + macho.size;
+    BOOL success = NO;
+    
+    // Loop through the commands until we found an LC_CODE_SIGNATURE command
+    // and either replace it and its corresponding signature with zero-bytes
+    // or change LC_CODE_SIGNATURE to OP_SOFT_STRIP, so the compiler
+    // can't interpret the load command for the code signature and treats
+    // the binary as if it doesn't exist
+    LOG("unrestricting for architecture %s...", CPU(macho.header.cputype));
+
+    for (int i = 0; i < macho.header.ncmds; i++) {
+        if (binary.currentOffset >= binary.length ||
+            binary.currentOffset > macho.header.sizeofcmds + macho.size + macho.offset) // dont go past the header
+            break;
+        
+        uint32_t cmd  = [binary intAtOffset:binary.currentOffset];
+        uint32_t size = [binary intAtOffset:binary.currentOffset + sizeof(uint32_t)];
+        
+#define CROSS(CODE...) \
+    case LC_SEGMENT: {\
+        typedef struct segment_command segment_type; \
+        typedef struct section section_type; \
+        CODE \
+    }\
+    case LC_SEGMENT_64: {\
+        typedef struct segment_command_64 segment_type; \
+        typedef struct section_64 section_type; \
+        CODE \
+    }
+        
+        switch (cmd) {
+            CROSS(
+                segment_type *command = (segment_type *)(binary.mutableBytes + binary.currentOffset);
+                if (!strncmp(command->segname, "__RESTRICT", 16)) {
+                    LOG("Found __RESTRICT segment");
+                    if (size < sizeof(command) ||
+                        command->nsects > (size - sizeof(*command)) / sizeof(section_type)) {
+                        LOG("Bad segment_command");
+                        return false;
+                    }
+                    
+                    section_type *section = (section_type *)(binary.mutableBytes + binary.currentOffset + sizeof(*command));
+                    for (uint32_t i = 0; i < command->nsects; i++, section++) {
+                        if (!strncmp(section->sectname, "__restrict", 16)) {
+                            LOG("Found __restrict section. Patching...");
+                            
+                            if (soft) {
+                                strcpy(section->sectname, OP_SOFT_UNRESTRICT);
+                                success = YES;
+                            } else {
+                                command->nsects--;
+                                command->cmdsize -= sizeof(*section);
+                                macho.header.sizeofcmds -= sizeof(*section);
+                                
+                                uint64_t sectionSize = sizeof(*section);
+                                [binary replaceBytesInRange:NSMakeRange((NSUInteger)section - (NSUInteger)binary.mutableBytes,
+                                                                        sectionSize)
+                                                  withBytes:0
+                                                     length:0];
+                                [binary replaceBytesInRange:NSMakeRange(macho.offset + macho.header.sizeofcmds + macho.size, 0)
+                                                  withBytes:0
+                                                     length:sectionSize];
+                                success = YES;
+                            }
+                        }
+                    }
+                    
+                    // remove the whole segment
+                    if (command->nsects == 0 && !soft) {
+                        LOG("__RESTRICT segment has no more sections. Removing...");
+                        macho.header.ncmds--;
+                        uint32_t cmdSize = sizeof(*command);
+                        macho.header.sizeofcmds -= command->cmdsize;
+                        [binary replaceBytesInRange:NSMakeRange((NSUInteger)command - (NSUInteger)binary.mutableBytes,
+                                                                cmdSize)
+                                          withBytes:0
+                                             length:0];
+                        [binary replaceBytesInRange:NSMakeRange(macho.offset + macho.header.sizeofcmds + macho.size, 0)
+                                          withBytes:0
+                                             length:cmdSize];
+                    } else {
+                        binary.currentOffset += command->cmdsize;
+                    }
+                    
+                } else {
+                    binary.currentOffset += size;
+                }
+                break;
+            )
+            default:
+                binary.currentOffset += size;
+                break;
+        }
+    }
+#undef CROSS
+    
+    // paste in a modified header with an updated number and size of commands
+    if (!soft) {
+        [binary replaceBytesInRange:NSMakeRange(macho.offset, sizeof(macho.header))
+                          withBytes:&macho.header
+                             length:sizeof(macho.header)];
     }
     
     return success;
@@ -154,6 +262,58 @@ BOOL binaryHasLoadCommandForDylib(NSMutableData *binary, NSString *dylib, uint32
         uint32_t size = [binary intAtOffset:binary.currentOffset + 4];
         
         switch (cmd) {
+            /*case LC_DYLD_INFO:
+            case LC_DYLD_INFO_ONLY: {
+                NSLog(@"%lu", (unsigned long)binary.currentOffset);
+                struct dyld_info_command info;
+                [binary getBytes:&info range:NSMakeRange(binary.currentOffset, size)];
+                NSLog(@"%u", info.bind_off);
+                NSLog(@"%u", info.weak_bind_off);
+                NSLog(@"%u", info.lazy_bind_off);
+
+                uint8_t *p = malloc(info.bind_size);
+                [binary getBytes:p range:NSMakeRange(info.bind_off, info.bind_size)];
+                uint32_t s = 0;
+                while (s < info.bind_size) {
+
+                    uint8_t immediate = *p & BIND_IMMEDIATE_MASK;
+                    uint8_t opcode = *p & BIND_OPCODE_MASK;
+
+                    p++;
+                    s+=(sizeof(&p));
+
+                    if (opcode == BIND_OPCODE_SET_DYLIB_ORDINAL_IMM ||
+                        opcode == BIND_OPCODE_SET_DYLIB_ORDINAL_ULEB ||
+                        opcode == BIND_OPCODE_SET_DYLIB_SPECIAL_IMM) {
+                        NSLog(@"%d, %d", opcode, immediate);
+//                        NSLog(@"%d", BIND_OPCODE_SET_DYLIB_ORDINAL_IMM);
+//                        NSLog(@"%d", BIND_OPCODE_SET_DYLIB_ORDINAL_ULEB);
+//                        NSLog(@"%d", BIND_OPCODE_SET_DYLIB_SPECIAL_IMM);
+
+                        if (opcode == BIND_OPCODE_SET_DYLIB_ORDINAL_ULEB) {
+                            NSLog(@"ULEB");
+                            uint64_t result = 0;
+                            int bit = 0;
+                            do {
+                                assert(s < info.bind_size);
+                                uint64_t slice = *p & 0x7f;
+                                assert(bit < 64 && slice << bit >> bit == slice);
+                                result |= (slice << bit);
+                                bit += 7;
+
+                                s+=sizeof(*p);
+                            } while (*p++ & 0x80);
+                            s+=sizeof(*p);
+
+                            NSLog(@"result: %llu", result);
+                        }
+
+                    }
+                }
+
+                binary.currentOffset += size;
+                break;
+            }*/
             case LC_REEXPORT_DYLIB:
             case LC_LOAD_UPWARD_DYLIB:
             case LC_LOAD_WEAK_DYLIB:

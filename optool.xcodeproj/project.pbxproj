@@ -363,6 +363,9 @@
 		FA0D29711990A2E300EC5F74 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CURRENT_PROJECT_VERSION = 0.2;
+				DYLIB_COMPATIBILITY_VERSION = 0.1;
+				DYLIB_CURRENT_VERSION = 0.2;
 				OTHER_LDFLAGS = "-ObjC";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
@@ -371,6 +374,9 @@
 		FA0D29721990A2E300EC5F74 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CURRENT_PROJECT_VERSION = 0.2;
+				DYLIB_COMPATIBILITY_VERSION = 0.1;
+				DYLIB_CURRENT_VERSION = 0.2;
 				OTHER_LDFLAGS = "-ObjC";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
