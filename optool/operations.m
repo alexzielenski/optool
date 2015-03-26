@@ -86,11 +86,10 @@ BOOL unrestrictBinary(NSMutableData *binary, struct thin_header macho, BOOL soft
     binary.currentOffset = macho.offset + macho.size;
     BOOL success = NO;
     
-    // Loop through the commands until we found an LC_CODE_SIGNATURE command
-    // and either replace it and its corresponding signature with zero-bytes
-    // or change LC_CODE_SIGNATURE to OP_SOFT_STRIP, so the compiler
-    // can't interpret the load command for the code signature and treats
-    // the binary as if it doesn't exist
+    // Loop through the commands for an LC_SEGMENT(_64) command which has the name __RESTRICT
+    // then remove its section with the name "__restrict". If soft is true, then we will simply rename
+    // the __restrict section, if not, we will completely delete it and delete the entire __RESTRICT segment if it is
+    // empty.
     LOG("unrestricting for architecture %s...", CPU(macho.header.cputype));
 
     for (int i = 0; i < macho.header.ncmds; i++) {
