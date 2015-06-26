@@ -65,11 +65,11 @@ static uint32_t write_uleb128(uint8_t *p, uint64_t value, uint32_t length_limit)
     uint32_t len = (uint32_t)(p - orig);
     
     int32_t pad = length_limit - len;
-    if (pad < 0) {
+    if (pad < 0 && length_limit != 0) {
         exit(OPErrorULEBEncodeFailure);
     }
     
-    if (pad != 0) {
+    if (pad != 0 && pad > 0) {
         // mark these bytes to show more follow
         for (; pad != 1; --pad) {
             *p++ = '\x80';
