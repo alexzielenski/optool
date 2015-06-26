@@ -28,6 +28,59 @@
 
 #import "operations.h"
 #import "NSData+Reading.h"
+#import "defines.h"
+
+// Reads ulen128 from a buffer and returns the value and the length read
+static uint64_t read_uleb128(uint8_t *p, uint32_t *read_length) {
+    uint8_t *orig  = p;
+    uint64_t value = 0;
+    unsigned shift = 0;
+    
+    do {
+        value += (*p & 0x7f) << shift;
+        shift += 7;
+    } while (*p++ >= 128);
+    
+    if (read_length)
+        *read_length = (uint32_t)(p - orig);
+    
+    return value;
+}
+
+// Writes a uint64_t as a uleb to a buffer and returns the length
+// Also passes in a length limit so we can pad to it
+static uint32_t write_uleb128(uint8_t *p, uint64_t value, uint32_t length_limit) {
+    uint8_t *orig = p;
+    do {
+        uint8_t byte = value & 0x7f;
+        value >>= 7;
+        
+        if (value != 0) {
+            byte |= 0x80;
+        }
+        
+        *p++ = byte;
+    } while (value != 0);
+    
+    uint32_t len = (uint32_t)(p - orig);
+    
+    int32_t pad = length_limit - len;
+    if (pad < 0) {
+        exit(OPErrorULEBEncodeFailure);
+    }
+    
+    if (pad != 0) {
+        // mark these bytes to show more follow
+        for (; pad != 1; --pad) {
+            *p++ = '\x80';
+        }
+        
+        // mark terminating byte
+        *p++ = '\x00';
+    }
+    
+    return len;
+}
 
 unsigned int OP_SOFT_STRIP = 0x00001337;
 const char *OP_SOFT_UNRESTRICT = "\xf0\x9f\x92\xa9";
@@ -194,6 +247,8 @@ BOOL removeLoadEntryFromBinary(NSMutableData *binary, struct thin_header macho, 
     
     uint32_t num = 0;
     uint32_t cumulativeSize = 0;
+    uint32_t removedOrdinal = -1;
+    
     for (int i = 0; i < macho.header.ncmds; i++) {
         if (binary.currentOffset >= binary.length ||
             binary.currentOffset > macho.offset + macho.size + macho.header.sizeofcmds)
@@ -208,15 +263,76 @@ BOOL removeLoadEntryFromBinary(NSMutableData *binary, struct thin_header macho, 
             case LC_LOAD_UPWARD_DYLIB:
             case LC_LOAD_WEAK_DYLIB:
             case LC_LOAD_DYLIB: {
+                
                 struct dylib_command command = *(struct dylib_command *)(binary.bytes + binary.currentOffset);
                 char *name = (char *)[[binary subdataWithRange:NSMakeRange(binary.currentOffset + command.dylib.name.offset, command.cmdsize - command.dylib.name.offset)] bytes];
-                if ([@(name) isEqualToString:payload]) {
+                if ([@(name) isEqualToString:payload] && removedOrdinal != -1) {
                     LOG("removing payload from %s...", LC(cmd));
                     // remove load command
                     // remove these bytes and append zeroes to the end of the header
                     [binary replaceBytesInRange:NSMakeRange(binary.currentOffset, size) withBytes:0 length:0];
                     num++;
                     cumulativeSize += size;
+                    
+                    removedOrdinal = i;
+                }
+                
+                binary.currentOffset += size;
+                break;
+            }
+                
+            //! EXPERIMENTAL: Shifting binding ordinals
+            case LC_DYLD_INFO:
+            case LC_DYLD_INFO_ONLY: {
+                if (removedOrdinal == -1) {
+                    binary.currentOffset += size;
+                    break;
+                }
+                
+                struct dyld_info_command info;
+                [binary getBytes:&info range:NSMakeRange(binary.currentOffset, size)];
+                
+                uint8_t *p = (uint8_t *)binary.mutableBytes + info.bind_off;
+                uint32_t s = 0;
+                while (s < info.bind_size) {
+                    
+                    uint8_t opcode = *p & BIND_OPCODE_MASK;
+                    
+                    p++;
+                    s += (sizeof(&p));
+                    
+                    // we dont support opcode == BIND_OPCODE_SET_DYLIB_SPECIAL_IMM
+                    if (opcode == BIND_OPCODE_SET_DYLIB_ORDINAL_ULEB) {
+                        NSLog(@"ULEB");
+                        
+                        // Convert the ULEB into something we can use
+                        uint32_t len = 0;
+                        uint64_t ordinal = read_uleb128(p, &len);
+                        // Decrement it if necessary
+                        if (ordinal > removedOrdinal) {
+                            ordinal--;
+                            
+                            // Write it back if necessary
+                            write_uleb128(p, ordinal, len);
+                        }
+                        
+                        // increment s by the size of the ULEB
+                        s += len;
+
+                        
+                    } else if (opcode == BIND_OPCODE_SET_DYLIB_ORDINAL_IMM) {
+                        uint8_t immediate = *p & BIND_IMMEDIATE_MASK;
+                        
+                        // decrement this immediate if this opcode is greater than the one we removed
+                        if (immediate > i) {
+                            immediate--;
+                            
+                            // no need to shift the opcode since we never shifted it right
+                            uint8_t binding = opcode | (immediate & BIND_IMMEDIATE_MASK);
+                            // reset the binding ordinal
+                            *p = binding;
+                        }
+                    }
                 }
                 
                 binary.currentOffset += size;
@@ -261,58 +377,6 @@ BOOL binaryHasLoadCommandForDylib(NSMutableData *binary, NSString *dylib, uint32
         uint32_t size = [binary intAtOffset:binary.currentOffset + 4];
         
         switch (cmd) {
-            /*case LC_DYLD_INFO:
-            case LC_DYLD_INFO_ONLY: {
-                NSLog(@"%lu", (unsigned long)binary.currentOffset);
-                struct dyld_info_command info;
-                [binary getBytes:&info range:NSMakeRange(binary.currentOffset, size)];
-                NSLog(@"%u", info.bind_off);
-                NSLog(@"%u", info.weak_bind_off);
-                NSLog(@"%u", info.lazy_bind_off);
-
-                uint8_t *p = malloc(info.bind_size);
-                [binary getBytes:p range:NSMakeRange(info.bind_off, info.bind_size)];
-                uint32_t s = 0;
-                while (s < info.bind_size) {
-
-                    uint8_t immediate = *p & BIND_IMMEDIATE_MASK;
-                    uint8_t opcode = *p & BIND_OPCODE_MASK;
-
-                    p++;
-                    s+=(sizeof(&p));
-
-                    if (opcode == BIND_OPCODE_SET_DYLIB_ORDINAL_IMM ||
-                        opcode == BIND_OPCODE_SET_DYLIB_ORDINAL_ULEB ||
-                        opcode == BIND_OPCODE_SET_DYLIB_SPECIAL_IMM) {
-                        NSLog(@"%d, %d", opcode, immediate);
-//                        NSLog(@"%d", BIND_OPCODE_SET_DYLIB_ORDINAL_IMM);
-//                        NSLog(@"%d", BIND_OPCODE_SET_DYLIB_ORDINAL_ULEB);
-//                        NSLog(@"%d", BIND_OPCODE_SET_DYLIB_SPECIAL_IMM);
-
-                        if (opcode == BIND_OPCODE_SET_DYLIB_ORDINAL_ULEB) {
-                            NSLog(@"ULEB");
-                            uint64_t result = 0;
-                            int bit = 0;
-                            do {
-                                assert(s < info.bind_size);
-                                uint64_t slice = *p & 0x7f;
-                                assert(bit < 64 && slice << bit >> bit == slice);
-                                result |= (slice << bit);
-                                bit += 7;
-
-                                s+=sizeof(*p);
-                            } while (*p++ & 0x80);
-                            s+=sizeof(*p);
-
-                            NSLog(@"result: %llu", result);
-                        }
-
-                    }
-                }
-
-                binary.currentOffset += size;
-                break;
-            }*/
             case LC_REEXPORT_DYLIB:
             case LC_LOAD_UPWARD_DYLIB:
             case LC_LOAD_WEAK_DYLIB:

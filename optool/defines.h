@@ -96,5 +96,7 @@ typedef NS_ENUM(int, OPError) {
     OPErrorInvalidLoadCommand = 10,          // user provided an unnacceptable load command string
     OPErrorResignFailure      = 11,          // codesign failed for some reason
     OPErrorBackupFailure      = 12,          // failed to write backup
-    OPErrorInvalidArguments   = 13           // bad arguments
+    OPErrorInvalidArguments   = 13,          // bad arguments
+    OPErrorBadULEB            = 14,          // uleb while reading binding ordinals is in an invalid format
+    OPErrorULEBEncodeFailure  = 15           // failed to encode a uleb within specified length requirements
 };

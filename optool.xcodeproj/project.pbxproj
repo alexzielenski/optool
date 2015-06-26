@@ -43,13 +43,6 @@
 			remoteGlobalIDString = DA00447A155D94FF0028A012;
 			remoteInfo = "ArgumentParser-Dynamic";
 		};
-		FA0D2A081990A44C00EC5F74 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = FA0D29F71990A44C00EC5F74 /* ArgumentParser.xcodeproj */;
-			proxyType = 2;
-			remoteGlobalIDString = DA00448C155D94FF0028A012;
-			remoteInfo = ArgumentParserTests;
-		};
 		FA0D2A0A1990A44C00EC5F74 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = FA0D29F71990A44C00EC5F74 /* ArgumentParser.xcodeproj */;
@@ -63,6 +56,13 @@
 			proxyType = 1;
 			remoteGlobalIDString = DA87348818970AB800113896;
 			remoteInfo = "ArgumentParser-Static";
+		};
+		FA1C058B1B3DB170000E0591 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = FA0D29F71990A44C00EC5F74 /* ArgumentParser.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = DA01E2FF1A8471E20012BCAE;
+			remoteInfo = "ArgumentParser-Dynamic Tests";
 		};
 /* End PBXContainerItemProxy section */
 
@@ -142,8 +142,8 @@
 				FA0D2A031990A44C00EC5F74 /* long-desc */,
 				FA0D2A051990A44C00EC5F74 /* spiffy */,
 				FA0D2A071990A44C00EC5F74 /* ArgumentParser-Dynamic.dylib */,
-				FA0D2A091990A44C00EC5F74 /* ArgumentParserTests.octest */,
 				FA0D2A0B1990A44C00EC5F74 /* libArgumentParser-Static.a */,
+				FA1C058C1B3DB170000E0591 /* ArgumentParser-Dynamic Tests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -235,18 +235,18 @@
 			remoteRef = FA0D2A061990A44C00EC5F74 /* PBXContainerItemProxy */;
 			sourceTree = BUILT_PRODUCTS_DIR;
 		};
-		FA0D2A091990A44C00EC5F74 /* ArgumentParserTests.octest */ = {
-			isa = PBXReferenceProxy;
-			fileType = wrapper.cfbundle;
-			path = ArgumentParserTests.octest;
-			remoteRef = FA0D2A081990A44C00EC5F74 /* PBXContainerItemProxy */;
-			sourceTree = BUILT_PRODUCTS_DIR;
-		};
 		FA0D2A0B1990A44C00EC5F74 /* libArgumentParser-Static.a */ = {
 			isa = PBXReferenceProxy;
 			fileType = archive.ar;
 			path = "libArgumentParser-Static.a";
 			remoteRef = FA0D2A0A1990A44C00EC5F74 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		FA1C058C1B3DB170000E0591 /* ArgumentParser-Dynamic Tests.xctest */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.cfbundle;
+			path = "ArgumentParser-Dynamic Tests.xctest";
+			remoteRef = FA1C058B1B3DB170000E0591 /* PBXContainerItemProxy */;
 			sourceTree = BUILT_PRODUCTS_DIR;
 		};
 /* End PBXReferenceProxy section */
