@@ -288,7 +288,7 @@ BOOL removeLoadEntryFromBinary(NSMutableData *binary, struct thin_header macho, 
                     binary.currentOffset += size;
                     break;
                 }
-                
+#ifdef DEBUG
                 struct dyld_info_command info;
                 [binary getBytes:&info range:NSMakeRange(binary.currentOffset, size)];
                 
@@ -334,7 +334,7 @@ BOOL removeLoadEntryFromBinary(NSMutableData *binary, struct thin_header macho, 
                         }
                     }
                 }
-                
+#endif
                 binary.currentOffset += size;
                 break;
             }
