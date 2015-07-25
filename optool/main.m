@@ -48,11 +48,12 @@ int main(int argc, const char * argv[]) {
         FSArgumentSignature *backup = [FSArgumentSignature argumentSignatureWithFormat:@"[-b --backup]"];
         FSArgumentSignature *output = [FSArgumentSignature argumentSignatureWithFormat:@"[-o --output]={1,1}"];
         FSArgumentSignature *help = [FSArgumentSignature argumentSignatureWithFormat:@"[-h --help]"];
-
+        
         // Actions
         FSArgumentSignature *strip = [FSArgumentSignature argumentSignatureWithFormat:@"[s strip]"];
         FSArgumentSignature *restore = [FSArgumentSignature argumentSignatureWithFormat:@"[r restore]"];
         FSArgumentSignature *install = [FSArgumentSignature argumentSignatureWithFormat:@"[i install]"];
+        FSArgumentSignature *rename = [FSArgumentSignature argumentSignatureWithFormat:@"[r rename]={1,2}"];
         FSArgumentSignature *uninstall = [FSArgumentSignature argumentSignatureWithFormat:@"[u uninstall]"];
         FSArgumentSignature *aslr = [FSArgumentSignature argumentSignatureWithFormat:@"[a aslr]"];
         FSArgumentSignature *unrestrict = [FSArgumentSignature argumentSignatureWithFormat:@"[c unrestrict]"];
@@ -63,12 +64,13 @@ int main(int argc, const char * argv[]) {
         [uninstall setInjectedSignatures:[NSSet setWithObjects:target, payload, nil]];
         [aslr setInjectedSignatures:[NSSet setWithObjects:target, nil]];
         [unrestrict setInjectedSignatures:[NSSet setWithObjects:target, weak, nil]];
+        [rename setInjectedSignatures:[NSSet setWithObjects:target, nil]];
         
         [weak setInjectedSignatures:[NSSet setWithObjects:strip, unrestrict, nil]];
         [payload setInjectedSignatures:[NSSet setWithObjects:install, uninstall, nil]];
         [command setInjectedSignatures:[NSSet setWithObjects:install, nil]];
 
-        FSArgumentPackage *package = [[NSProcessInfo processInfo] fsargs_parseArgumentsWithSignatures:@[resign, command, strip, restore, install, uninstall, output, backup, aslr, help, unrestrict]];
+        FSArgumentPackage *package = [[NSProcessInfo processInfo] fsargs_parseArgumentsWithSignatures:@[resign, command, strip, restore, install, uninstall, output, backup, aslr, help, unrestrict, rename]];
 
         NSString *targetPath = [package firstObjectForSignature:target];
         if (!targetPath || [package unknownSwitches].count > 0 || [package booleanValueForSignature:help]) {
@@ -181,6 +183,20 @@ int main(int argc, const char * argv[]) {
                 if (removeASLRFromBinary(binary, macho)) {
                     LOG("Successfully removed ASLR from binary");
                 }
+            } else if ([package countOfSignature:rename] > 0) {
+                NSLog(@"%@", [package allObjectsForSignature:rename]);
+                
+                NSString *first = [package firstObjectForSignature:rename];
+                NSString *last  = [package lastObjectForSignature:rename];
+                
+                if (first == last)
+                    first = nil;
+                
+                LOG("Attempting to rename...");
+                if (renameBinary(binary, macho, first, last)) {
+                    LOG("Successfully renamed");
+                }
+                
             } else {
                 // Invalid arguments. Show help
                 showHelp = YES;

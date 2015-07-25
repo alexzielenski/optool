@@ -405,6 +405,79 @@ BOOL binaryHasLoadCommandForDylib(NSMutableData *binary, NSString *dylib, uint32
     return NO;
 }
 
+BOOL renameBinary(NSMutableData *binary, struct thin_header macho, NSString *from, NSString *to) {
+    binary.currentOffset = macho.size + macho.offset;
+    
+    BOOL success = NO;
+    
+    // Loop through compatible LC_LOAD commands until we find one which points
+    // to the given dylib and tell the caller where it is and if it exists
+    for (int i = 0; i < macho.header.ncmds; i++) {
+        if (binary.currentOffset >= binary.length ||
+            binary.currentOffset > macho.offset + macho.size + macho.header.sizeofcmds)
+            break;
+        
+        uint32_t cmd  = [binary intAtOffset:binary.currentOffset];
+        uint32_t size = [binary intAtOffset:binary.currentOffset + 4];
+        
+        switch (cmd) {
+            case LC_ID_DYLIB:
+            case LC_REEXPORT_DYLIB:
+            case LC_LOAD_UPWARD_DYLIB:
+            case LC_LOAD_WEAK_DYLIB:
+            case LC_LOAD_DYLIB: {
+                struct dylib_command *command = (struct dylib_command *)(binary.mutableBytes + binary.currentOffset);
+                off_t name_offset = binary.currentOffset + command->dylib.name.offset;
+                NSRange name_range = NSMakeRange(name_offset, command->cmdsize - command->dylib.name.offset);
+                char *name = (char *)[[binary subdataWithRange:name_range] bytes];
+
+                if ([@(name) isEqualToString:from] || (!from && cmd == LC_ID_DYLIB)) {
+                    const char *replacement = to.fileSystemRepresentation;
+                    
+                    NSInteger name_length = strlen(replacement) + 1;
+                    unsigned int padding = (4 - (name_length % 4));
+                    if (padding < 4)
+                        name_length += padding;
+                    
+                    NSInteger shift = name_length - name_range.length;
+                    
+                    if (shift > 0) {
+                        // accomodate for shift by replacing null bytes
+                        [binary replaceBytesInRange:NSMakeRange(macho.header.sizeofcmds + macho.offset + macho.size,
+                                                                shift)
+                                          withBytes:0
+                                             length:0];
+                        
+                    } else if (shift < 0) {
+                        uint8_t zero = 0;
+                        // accomodate for shift by inserting null bytes
+                        [binary replaceBytesInRange:NSMakeRange(macho.header.sizeofcmds + macho.offset + macho.size,
+                                                                0)
+                                          withBytes:&zero
+                                             length:labs(shift)];
+                    }
+                                        
+                    command->cmdsize += shift;
+                    macho.header.sizeofcmds += shift;
+                    
+                    [binary replaceBytesInRange:NSMakeRange(macho.offset, sizeof(macho.header)) withBytes:&macho.header];
+                    [binary replaceBytesInRange:name_range withBytes:replacement length:name_length];
+                    
+                    success = YES;
+                }
+                
+                binary.currentOffset += size;
+                break;
+            }
+            default:
+                binary.currentOffset += size;
+                break;
+        }
+    }
+    
+    return success;
+}
+
 BOOL insertLoadEntryIntoBinary(NSString *dylibPath, NSMutableData *binary, struct thin_header macho, uint32_t type) {
     if (type != LC_REEXPORT_DYLIB &&
         type != LC_LOAD_WEAK_DYLIB &&
