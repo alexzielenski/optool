@@ -266,7 +266,7 @@ BOOL removeLoadEntryFromBinary(NSMutableData *binary, struct thin_header macho, 
                 
                 struct dylib_command command = *(struct dylib_command *)(binary.bytes + binary.currentOffset);
                 char *name = (char *)[[binary subdataWithRange:NSMakeRange(binary.currentOffset + command.dylib.name.offset, command.cmdsize - command.dylib.name.offset)] bytes];
-                if ([@(name) isEqualToString:payload] && removedOrdinal != -1) {
+                if ([@(name) isEqualToString:payload] && removedOrdinal == -1) {
                     LOG("removing payload from %s...", LC(cmd));
                     // remove load command
                     // remove these bytes and append zeroes to the end of the header
