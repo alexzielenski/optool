@@ -27,7 +27,7 @@
 
 
 #import <Foundation/Foundation.h>
-#import "FSArgumentParser/ArgumentParser/FSArguments.h"
+#import "FSArgumentParser/ArgumentParser/XPMArguments.h"
 #import "FSArgumentParser/ArgumentParser/NSString+Indenter.h"
 #import <sys/ttycom.h>
 #import <sys/ioctl.h>
@@ -40,23 +40,23 @@ int main(int argc, const char * argv[]) {
         BOOL showHelp = NO;
 
         // Flags
-        FSArgumentSignature *weak = [FSArgumentSignature argumentSignatureWithFormat:@"[-w --weak]"];
-        FSArgumentSignature *resign = [FSArgumentSignature argumentSignatureWithFormat:@"[--resign]"];
-        FSArgumentSignature *target = [FSArgumentSignature argumentSignatureWithFormat:@"[-t --target]={1,1}"];
-        FSArgumentSignature *payload = [FSArgumentSignature argumentSignatureWithFormat:@"[-p --payload]={1,1}"];
-        FSArgumentSignature *command = [FSArgumentSignature argumentSignatureWithFormat:@"[-c --command]={1,1}"];
-        FSArgumentSignature *backup = [FSArgumentSignature argumentSignatureWithFormat:@"[-b --backup]"];
-        FSArgumentSignature *output = [FSArgumentSignature argumentSignatureWithFormat:@"[-o --output]={1,1}"];
-        FSArgumentSignature *help = [FSArgumentSignature argumentSignatureWithFormat:@"[-h --help]"];
+        XPMArgumentSignature *weak = [XPMArgumentSignature argumentSignatureWithFormat:@"[-w --weak]"];
+        XPMArgumentSignature *resign = [XPMArgumentSignature argumentSignatureWithFormat:@"[--resign]"];
+        XPMArgumentSignature *target = [XPMArgumentSignature argumentSignatureWithFormat:@"[-t --target]={1,1}"];
+        XPMArgumentSignature *payload = [XPMArgumentSignature argumentSignatureWithFormat:@"[-p --payload]={1,1}"];
+        XPMArgumentSignature *command = [XPMArgumentSignature argumentSignatureWithFormat:@"[-c --command]={1,1}"];
+        XPMArgumentSignature *backup = [XPMArgumentSignature argumentSignatureWithFormat:@"[-b --backup]"];
+        XPMArgumentSignature *output = [XPMArgumentSignature argumentSignatureWithFormat:@"[-o --output]={1,1}"];
+        XPMArgumentSignature *help = [XPMArgumentSignature argumentSignatureWithFormat:@"[-h --help]"];
         
         // Actions
-        FSArgumentSignature *strip = [FSArgumentSignature argumentSignatureWithFormat:@"[s strip]"];
-        FSArgumentSignature *restore = [FSArgumentSignature argumentSignatureWithFormat:@"[r restore]"];
-        FSArgumentSignature *install = [FSArgumentSignature argumentSignatureWithFormat:@"[i install]"];
-        FSArgumentSignature *rename = [FSArgumentSignature argumentSignatureWithFormat:@"[r rename]={1,2}"];
-        FSArgumentSignature *uninstall = [FSArgumentSignature argumentSignatureWithFormat:@"[u uninstall]"];
-        FSArgumentSignature *aslr = [FSArgumentSignature argumentSignatureWithFormat:@"[a aslr]"];
-        FSArgumentSignature *unrestrict = [FSArgumentSignature argumentSignatureWithFormat:@"[c unrestrict]"];
+        XPMArgumentSignature *strip = [XPMArgumentSignature argumentSignatureWithFormat:@"[s strip]"];
+        XPMArgumentSignature *restore = [XPMArgumentSignature argumentSignatureWithFormat:@"[r restore]"];
+        XPMArgumentSignature *install = [XPMArgumentSignature argumentSignatureWithFormat:@"[i install]"];
+        XPMArgumentSignature *rename = [XPMArgumentSignature argumentSignatureWithFormat:@"[r rename]={1,2}"];
+        XPMArgumentSignature *uninstall = [XPMArgumentSignature argumentSignatureWithFormat:@"[u uninstall]"];
+        XPMArgumentSignature *aslr = [XPMArgumentSignature argumentSignatureWithFormat:@"[a aslr]"];
+        XPMArgumentSignature *unrestrict = [XPMArgumentSignature argumentSignatureWithFormat:@"[c unrestrict]"];
         
         [strip setInjectedSignatures:[NSSet setWithObjects:target, weak, nil]];
         [restore setInjectedSignatures:[NSSet setWithObjects:target, nil]];
@@ -70,7 +70,7 @@ int main(int argc, const char * argv[]) {
         [payload setInjectedSignatures:[NSSet setWithObjects:install, uninstall, nil]];
         [command setInjectedSignatures:[NSSet setWithObjects:install, nil]];
 
-        FSArgumentPackage *package = [[NSProcessInfo processInfo] fsargs_parseArgumentsWithSignatures:@[resign, command, strip, restore, install, uninstall, output, backup, aslr, help, unrestrict, rename]];
+        XPMArgumentPackage *package = [[NSProcessInfo processInfo] xpmargs_parseArgumentsWithSignatures:@[resign, command, strip, restore, install, uninstall, output, backup, aslr, help, unrestrict, rename]];
 
         NSString *targetPath = [package firstObjectForSignature:target];
         if (!targetPath || [package unknownSwitches].count > 0 || [package booleanValueForSignature:help]) {
@@ -256,7 +256,7 @@ int main(int argc, const char * argv[]) {
             struct winsize ws;
             ioctl(0, TIOCGWINSZ, &ws);
 
-#define SHOW(SIG) LOG("%s", [[SIG fsargs_mutableStringByIndentingToWidth:2 lineLength:ws.ws_col] UTF8String])
+#define SHOW(SIG) LOG("%s", [[SIG xpmargs_mutableStringByIndentingToWidth:2 lineLength:ws.ws_col] UTF8String])
 
             LOG("optool v0.2\n");
             LOG("USAGE:");

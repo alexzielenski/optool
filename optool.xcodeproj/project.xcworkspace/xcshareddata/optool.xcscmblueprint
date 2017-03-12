@@ -1,0 +1,30 @@
+{
+  "DVTSourceControlWorkspaceBlueprintPrimaryRemoteRepositoryKey" : "F1B76423BDB1F725E43865F622E178CED216846D",
+  "DVTSourceControlWorkspaceBlueprintWorkingCopyRepositoryLocationsKey" : {
+
+  },
+  "DVTSourceControlWorkspaceBlueprintWorkingCopyStatesKey" : {
+    "F1B76423BDB1F725E43865F622E178CED216846D" : 9223372036854775807,
+    "D1B6B9FA9FE2EC412736C36DCF6D3BF9E34BCB5C" : 0
+  },
+  "DVTSourceControlWorkspaceBlueprintIdentifierKey" : "B38E7E3E-A9F1-4387-849F-632893CBBA39",
+  "DVTSourceControlWorkspaceBlueprintWorkingCopyPathsKey" : {
+    "F1B76423BDB1F725E43865F622E178CED216846D" : "optool\/",
+    "D1B6B9FA9FE2EC412736C36DCF6D3BF9E34BCB5C" : "optool\/optool\/FSArgumentParser\/"
+  },
+  "DVTSourceControlWorkspaceBlueprintNameKey" : "optool",
+  "DVTSourceControlWorkspaceBlueprintVersion" : 204,
+  "DVTSourceControlWorkspaceBlueprintRelativePathToProjectKey" : "optool.xcodeproj",
+  "DVTSourceControlWorkspaceBlueprintRemoteRepositoriesKey" : [
+    {
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryURLKey" : "github.com:NSError\/ArgumentParser.git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositorySystemKey" : "com.apple.dt.Xcode.sourcecontrol.Git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryIdentifierKey" : "D1B6B9FA9FE2EC412736C36DCF6D3BF9E34BCB5C"
+    },
+    {
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryURLKey" : "github.com:alexzielenski\/optool.git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositorySystemKey" : "com.apple.dt.Xcode.sourcecontrol.Git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryIdentifierKey" : "F1B76423BDB1F725E43865F622E178CED216846D"
+    }
+  ]
+}
