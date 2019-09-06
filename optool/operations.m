@@ -442,7 +442,7 @@ BOOL renameBinary(NSMutableData *binary, struct thin_header macho, NSString *fro
                     NSInteger shift = name_length - name_range.length;
                     
                     if (shift > 0) {
-                        // accomodate for shift by replacing null bytes
+                        // accommodate for shift by replacing null bytes
                         [binary replaceBytesInRange:NSMakeRange(macho.header.sizeofcmds + macho.offset + macho.size,
                                                                 shift)
                                           withBytes:0
@@ -450,7 +450,7 @@ BOOL renameBinary(NSMutableData *binary, struct thin_header macho, NSString *fro
                         
                     } else if (shift < 0) {
                         uint8_t zero = 0;
-                        // accomodate for shift by inserting null bytes
+                        // accommodate for shift by inserting null bytes
                         [binary replaceBytesInRange:NSMakeRange(macho.header.sizeofcmds + macho.offset + macho.size,
                                                                 0)
                                           withBytes:&zero
@@ -553,7 +553,7 @@ BOOL insertLoadEntryIntoBinary(NSString *dylibPath, NSMutableData *binary, struc
     return YES;
 }
 BOOL removeASLRFromBinary(NSMutableData *binary, struct thin_header macho) {
-    // MH_PIE is a flag on the macho header whcih indicates that the address space of the executable
+    // MH_PIE is a flag on the macho header which indicates that the address space of the executable
     // should be randomized
     if (macho.header.flags & MH_PIE) {
         macho.header.flags &= ~MH_PIE;
