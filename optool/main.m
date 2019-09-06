@@ -152,7 +152,7 @@ int main(int argc, const char * argv[]) {
                     LOG("Found no restrict section to remove");
                     return OPErrorStripFailure;
                 } else {
-                    LOG("Sucessfully removed restrict section");
+                    LOG("Successfully removed restrict section");
                 }
                 
             } else if ([package booleanValueForSignature:uninstall]) {
